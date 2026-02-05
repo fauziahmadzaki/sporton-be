@@ -2,32 +2,40 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model";
-import dotenv from "dotenv";
 import { CONFIG } from "../config/config";
+import { apiResponse } from "../helpers/response";
+import { safeParse } from "zod";
+import { signinSchema } from "../validators/auth.validator";
 
 const JWT_SECRET = CONFIG.jwtSecret;
 
 export const signin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
-    console.log(req.body);
+    const parsed = safeParse(signinSchema, req.body);
 
-    console.log(JWT_SECRET);
+    if (!parsed.success) {
+      apiResponse.error(
+        res,
+        "Bad Request",
+        parsed.error.flatten().fieldErrors,
+        400,
+      );
+      return;
+    }
+
+    const { email, password } = parsed.data;
+
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      res.status(400).json({
-        message: "User not found!",
-      });
+      apiResponse.error(res, "Invalid Email or Password", null, 400);
       return;
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
-      res.status(400).json({
-        message: "Invalid email or password",
-      });
+      apiResponse.error(res, "Invalid email or password", null, 400);
       return;
     }
 
@@ -35,8 +43,7 @@ export const signin = async (req: Request, res: Response): Promise<void> => {
       expiresIn: "1d",
     });
 
-    res.status(200).json({
-      message: "Signin successful",
+    apiResponse.success(res, "Signin successfull", {
       token,
       user: {
         id: user._id,
@@ -45,9 +52,7 @@ export const signin = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Internal server error",
-    });
+    apiResponse.error(res, "Internal server error", null, 500);
   }
 };
 
@@ -60,9 +65,7 @@ export const initiateAdminUser = async (
 
     const userCount = await userModel.countDocuments();
     if (userCount > 0) {
-      res.status(400).json({
-        message: "Admin user already exists",
-      });
+      apiResponse.error(res, "Admin user already exists", null, 400);
       return;
     }
 
@@ -76,12 +79,17 @@ export const initiateAdminUser = async (
 
     await newUser.save();
 
-    res.status(201).json({
-      message: "Admin user created successfully",
-    });
+    apiResponse.success(
+      res,
+      "Admin user created successfully",
+      {
+        id: newUser._id,
+        email: newUser.email,
+        name: newUser.name,
+      },
+      201,
+    );
   } catch (error) {
-    res.status(500).json({
-      message: "Internal server error",
-    });
+    apiResponse.error(res, "Internal server error", null, 500);
   }
 };
