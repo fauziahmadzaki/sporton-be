@@ -2,12 +2,15 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model";
-import { CONFIG } from "../config/config";
+import CONFIG from "../config/config";
 import { apiResponse } from "../helpers/response";
 import { safeParse } from "zod";
-import { signinSchema } from "../validators/auth.validator";
-
-const JWT_SECRET = CONFIG.jwtSecret;
+import {
+  initiateAdminUserSchema,
+  signinSchema,
+} from "../validators/auth.validator";
+import { registerAdminService, signinService } from "../services/auth.services";
+import { AppError, ErrorMessage } from "../helpers/error";
 
 export const signin = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -23,36 +26,16 @@ export const signin = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const { email, password } = parsed.data;
+    const data = await signinService(parsed.data.email, parsed.data.password);
 
-    const user = await userModel.findOne({ email });
-
-    if (!user) {
-      apiResponse.error(res, "Invalid Email or Password", null, 400);
+    apiResponse.success(res, "Signin successful", data, 200);
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      apiResponse.error(res, error.message, error.statusCode);
       return;
     }
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordMatch) {
-      apiResponse.error(res, "Invalid email or password", null, 400);
-      return;
-    }
-
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    apiResponse.success(res, "Signin successfull", {
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-      },
-    });
-  } catch (error) {
-    apiResponse.error(res, "Internal server error", null, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
   }
 };
 
@@ -61,35 +44,28 @@ export const initiateAdminUser = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { email, password, name } = req.body;
-
-    const userCount = await userModel.countDocuments();
-    if (userCount > 0) {
-      apiResponse.error(res, "Admin user already exists", null, 400);
+    const parsed = safeParse(initiateAdminUserSchema, req.body);
+    if (!parsed.success) {
+      apiResponse.error(
+        res,
+        ErrorMessage.BAD_REQUEST,
+        parsed.error.flatten().fieldErrors,
+        400,
+      );
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new userModel({
-      email,
-      name,
-      password: hashedPassword,
-    });
-
-    await newUser.save();
-
-    apiResponse.success(
-      res,
-      "Admin user created successfully",
-      {
-        id: newUser._id,
-        email: newUser.email,
-        name: newUser.name,
-      },
-      201,
+    const data = await registerAdminService(
+      parsed.data.email,
+      parsed.data.password,
+      parsed.data.name,
     );
-  } catch (error) {
-    apiResponse.error(res, "Internal server error", null, 500);
+    apiResponse.success(res, "Admin user created successfully", data, 201);
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      apiResponse.error(res, error.message, error.statusCode);
+      return;
+    }
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
   }
 };
