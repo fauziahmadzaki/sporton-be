@@ -1,32 +1,40 @@
 import { AppError, ErrorMessage } from "../helpers/error";
 import categoryModel, { ICategory } from "../models/category.model";
 import fs from "fs";
+import { CategoryType } from "../types";
+import { getPaginate, getSearch, getSort } from "../helpers/pagination";
 
-export const createCategoryService = async (
-  name: string,
-  description?: string,
-  image?: string,
-) => {
-  const newCategory = new categoryModel({
-    name,
-    description,
-    imageUrl: image,
-  });
-
-  await newCategory.save();
-
-  return newCategory;
+export const createCategoryService = async (payload: CategoryType) => {
+  return await categoryModel.create(payload);
 };
 
 export const updateCategoryService = async (
   id: string,
-  payload: Partial<ICategory>,
+  payload: Partial<CategoryType>,
 ) => {
-  return await categoryModel.findByIdAndUpdate(id, payload);
+  const category = await categoryModel.findById(id);
+  if (!category) throw new AppError(ErrorMessage.NOT_FOUND, 404);
+
+  if (payload.imageUrl) {
+    fs.rmSync(payload.imageUrl);
+  }
+
+  return await categoryModel.findByIdAndUpdate(id, payload, { new: true });
 };
 
-export const getAllCategoriesService = async () => {
-  return await categoryModel.find();
+export const getAllCategoriesService = async (query: any) => {
+  const { page, limit, skip } = getPaginate(query);
+
+  const sort = getSort(query, ["name", "createdAt"]);
+
+  const search = getSearch(query, ["name", "description"]);
+
+  const [item, total] = await Promise.all([
+    categoryModel.find(search).sort(sort).skip(skip).limit(limit),
+    categoryModel.countDocuments(search),
+  ]);
+
+  return { item, total, page, limit };
 };
 
 export const getCategoryByIdService = async (id: string) => {

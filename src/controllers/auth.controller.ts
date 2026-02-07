@@ -1,8 +1,4 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import userModel from "../models/user.model";
-import CONFIG from "../config/config";
 import { apiResponse } from "../helpers/response";
 import { safeParse } from "zod";
 import {
@@ -31,11 +27,11 @@ export const signin = async (req: Request, res: Response): Promise<void> => {
     apiResponse.success(res, "Signin successful", data, 200);
   } catch (error: unknown) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
 
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
 
@@ -63,9 +59,9 @@ export const initiateAdminUser = async (
     apiResponse.success(res, "Admin user created successfully", data, 201);
   } catch (error: unknown) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };

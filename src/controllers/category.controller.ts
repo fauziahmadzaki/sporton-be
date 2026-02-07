@@ -9,15 +9,16 @@ import {
 import {
   createCategoryService,
   deleteCategoryService,
+  getAllCategoriesService,
   getCategoryByIdService,
+  updateCategoryService,
 } from "../services/category.services";
-import categoryModel from "../models/category.model";
-import fs from "fs";
+import { CategoryType } from "../types";
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      apiResponse.error(res, ErrorMessage.INVALID_INPUT, 400);
+      apiResponse.error(res, ErrorMessage.INVALID_INPUT, null, 400);
       return;
     }
 
@@ -38,30 +39,23 @@ export const createCategory = async (req: Request, res: Response) => {
 
     const imagePath = `uploads/${req.file.filename}`;
 
-    const category = await createCategoryService(name, description, imagePath);
+    const payload = { name, description, imageUrl: imagePath };
+
+    const category = await createCategoryService(payload);
 
     apiResponse.success(res, "Category created successfully", category, 201);
   } catch (error: unknown) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const category = await categoryModel.findById(id);
-
-    if (!category) {
-      apiResponse.error(res, ErrorMessage.NOT_FOUND, 404);
-      return;
-    }
-    if (req.file) {
-      fs.rmSync(`${category.imageUrl}`);
-    }
 
     const parsed = safeParse(updateCategorySchema, req.body);
     if (!parsed.success) {
@@ -74,19 +68,16 @@ export const updateCategory = async (req: Request, res: Response) => {
       return;
     }
 
-    const {
-      data: { name, description },
-    } = parsed;
+    const payload: Partial<CategoryType> = {
+      name: parsed.data.name,
+      description: parsed.data.description,
+    };
 
-    const imagePath = `uploads/${req.file?.filename}`;
+    if (req.file) {
+      payload.imageUrl = `uploads/${req.file.filename}`;
+    }
 
-    const payload = req.file
-      ? { name, description, imageUrl: imagePath }
-      : { name, description };
-
-    const updatedCategory = await categoryModel.findByIdAndUpdate(id, payload, {
-      new: true,
-    });
+    const updatedCategory = await updateCategoryService(id as string, payload);
 
     apiResponse.success(
       res,
@@ -96,16 +87,16 @@ export const updateCategory = async (req: Request, res: Response) => {
     );
   } catch (error) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
 
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await categoryModel.find();
+    const categories = await getAllCategoriesService(req.query);
     apiResponse.success(
       res,
       "Categories fetched successfully",
@@ -114,10 +105,10 @@ export const getAllCategories = async (req: Request, res: Response) => {
     );
   } catch (error) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
 
@@ -128,10 +119,10 @@ export const getByCategoryById = async (req: Request, res: Response) => {
     apiResponse.success(res, "Category fetched successfully", category, 200);
   } catch (error) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
 
@@ -144,9 +135,9 @@ export const deleteCategory = async (req: Request, res: Response) => {
     apiResponse.success(res, "Category deleted successfully", null, 200);
   } catch (error) {
     if (error instanceof AppError) {
-      apiResponse.error(res, error.message, error.statusCode);
+      apiResponse.error(res, error.message, null, error.statusCode);
       return;
     }
-    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, 500);
+    apiResponse.error(res, ErrorMessage.INTERNAL_SERVER_ERROR, null, 500);
   }
 };
