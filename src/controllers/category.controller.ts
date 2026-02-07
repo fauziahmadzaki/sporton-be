@@ -43,7 +43,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
     const category = await createCategoryService(payload);
 
-    apiResponse.success(res, "Category created successfully", category, 201);
+    apiResponse.created(res, category);
   } catch (error: unknown) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -79,12 +79,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 
     const updatedCategory = await updateCategoryService(id as string, payload);
 
-    apiResponse.success(
-      res,
-      "Category updated successfully",
-      updatedCategory,
-      200,
-    );
+    apiResponse.updated(res, updatedCategory);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -97,12 +92,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
     const categories = await getAllCategoriesService(req.query);
-    apiResponse.success(
-      res,
-      "Categories fetched successfully",
-      categories,
-      200,
-    );
+    apiResponse.success(res, categories);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -116,7 +106,7 @@ export const getByCategoryById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const category = await getCategoryByIdService(id as string);
-    apiResponse.success(res, "Category fetched successfully", category, 200);
+    apiResponse.success(res, category);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -132,7 +122,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
 
     await deleteCategoryService(id as string);
 
-    apiResponse.success(res, "Category deleted successfully", null, 200);
+    apiResponse.deleted(res);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);

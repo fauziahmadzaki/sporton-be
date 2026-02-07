@@ -13,7 +13,7 @@ export const getAllProductsService = async (query: any) => {
   const sort = getSort(query, ["name", "price", "createdAt"]);
   const search = getSearch(query, ["name", "description"]);
 
-  const [item, total] = await Promise.all([
+  const [items, total] = await Promise.all([
     productModel
       .find(search)
       .sort(sort)
@@ -23,7 +23,7 @@ export const getAllProductsService = async (query: any) => {
     productModel.countDocuments(search),
   ]);
 
-  return { item, total, page, limit };
+  return { items, total, page, limit };
 };
 
 export const getProductByIdService = async (id: string) => {

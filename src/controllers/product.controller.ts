@@ -44,7 +44,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const product = await createProductService(payload);
 
-    apiResponse.success(res, "Product created successfully", product, 201);
+    apiResponse.created(res, product);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, error.statusCode);
@@ -84,12 +84,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     const updatedProduct = await updateProductService(id as string, payload);
 
-    apiResponse.success(
-      res,
-      "Product updated successfully",
-      updatedProduct,
-      200,
-    );
+    apiResponse.updated(res, updatedProduct);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -103,7 +98,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const products = await getAllProductsService(req.query);
 
-    apiResponse.success(res, "Products fetched successfully", products, 200);
+    apiResponse.success(res, products);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -116,10 +111,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     const product = await getProductByIdService(id as string);
 
-    apiResponse.success(res, "Product fetched successfully", product, 200);
+    apiResponse.success(res, product);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -135,7 +129,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     await deleteProductService(id as string);
 
-    apiResponse.success(res, "Product deleted successfully", null, 200);
+    apiResponse.deleted(res);
   } catch (error) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);

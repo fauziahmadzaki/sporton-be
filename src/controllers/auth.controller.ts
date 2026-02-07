@@ -24,7 +24,7 @@ export const signin = async (req: Request, res: Response): Promise<void> => {
 
     const data = await signinService(parsed.data.email, parsed.data.password);
 
-    apiResponse.success(res, "Signin successful", data, 200);
+    apiResponse.success(res, data);
   } catch (error: unknown) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);
@@ -56,7 +56,7 @@ export const initiateAdminUser = async (
       parsed.data.password,
       parsed.data.name,
     );
-    apiResponse.success(res, "Admin user created successfully", data, 201);
+    apiResponse.success(res, data);
   } catch (error: unknown) {
     if (error instanceof AppError) {
       apiResponse.error(res, error.message, null, error.statusCode);

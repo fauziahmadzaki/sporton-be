@@ -1,25 +1,32 @@
 import { Response } from "express";
 
-interface ApiResponse<T, E> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: E;
-}
-
 export const apiResponse = {
-  success: <T>(
-    res: Response,
-    message = "success",
-    data: T,
-    statusCode = 200,
-  ) => {
-    const response: ApiResponse<T, null> = {
+  success: <T>(res: Response, data: T, message?: string) => {
+    res.status(200).json({
       success: true,
-      message,
+      message: message || "Data fetched successfully",
       data,
-    };
-    res.status(statusCode).json(response);
+    });
+  },
+  created: <T>(res: Response, data: T, message?: string) => {
+    res.status(201).json({
+      success: true,
+      message: message || "Data created successfully",
+      data,
+    });
+  },
+  updated: <T>(res: Response, data: T, message?: string) => {
+    res.status(200).json({
+      success: true,
+      message: message || "Data updated successfully",
+      data,
+    });
+  },
+  deleted: (res: Response, message?: string) => {
+    res.status(204).json({
+      success: true,
+      message: message || "Data deleted successfully",
+    });
   },
   error: <E>(
     res: Response,
@@ -27,11 +34,10 @@ export const apiResponse = {
     errors?: E,
     statusCode = 500,
   ) => {
-    const response: ApiResponse<null, E> = {
+    res.status(statusCode).json({
       success: false,
       message,
       errors,
-    };
-    res.status(statusCode).json(response);
+    });
   },
 };

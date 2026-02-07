@@ -29,12 +29,12 @@ export const getAllCategoriesService = async (query: any) => {
 
   const search = getSearch(query, ["name", "description"]);
 
-  const [item, total] = await Promise.all([
+  const [items, total] = await Promise.all([
     categoryModel.find(search).sort(sort).skip(skip).limit(limit),
     categoryModel.countDocuments(search),
   ]);
 
-  return { item, total, page, limit };
+  return { items, total, page, limit };
 };
 
 export const getCategoryByIdService = async (id: string) => {
